@@ -379,11 +379,10 @@ This is an independent community project and is not affiliated with or endorsed 
 
 ---
 
-# License
+## License
 
-A license for this repository has not yet been finalized.
-
-Before making the repository public, the licensing terms of FRA4PicoScope and the included `ExtSigGen.h` interface should be reviewed to ensure that redistribution and attribution requirements are followed.
+This project is licensed under the **GNU General Public License v3.0 or later (GPL-3.0-or-later)**, in accordance with the licensing terms of FRA4PicoScope.
+This project contains code and interfaces derived from FRA4PicoScope. Original copyright and attribution notices are retained in the relevant source files.
 
 ---
 
