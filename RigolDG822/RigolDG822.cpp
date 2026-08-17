@@ -1,6 +1,6 @@
 #include "RigolDG822.h"
 
-#include "C:/Program Files (x86)/IVI Foundation/VISA/WinNT/Include/visa.h"
+#include <visa.h>
 #pragma comment(lib, "visa32.lib")
 
 #include <algorithm>
