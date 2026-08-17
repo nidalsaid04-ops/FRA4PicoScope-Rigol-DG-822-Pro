@@ -1,0 +1,5 @@
+LIBRARY "RigolDG822"
+EXPORTS
+    OpenExtSigGen
+    CloseExtSigGen
+    EnumerateExtSigGen
