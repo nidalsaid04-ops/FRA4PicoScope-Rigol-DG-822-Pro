@@ -1,8 +1,7 @@
 # FRA4PicoScope – Rigol DG822 Pro Plugin
 
-External signal generator plugin for **FRA4PicoScope**, adding support for the **Rigol DG822 Pro** arbitrary waveform/function generator through VISA.
-
-The goal of this project is to allow FRA4PicoScope to control a Rigol DG822 Pro as an external signal source during frequency-response measurements.
+Adding an external signal generator to the **FRA4PicoScope** software, this project supports the **Rigol DG822 Pro** random signal generator/function via VISA.
+This project aims to enable the FRA4PicoScope software to control the Rigol DG822 Pro as an external signal source during frequency response measurements.
 
 > **Project status:** Development / testing\
 > This plugin is currently intended for experimental use and may still require additional testing across different FRA4PicoScope and VISA configurations.
@@ -75,13 +74,11 @@ If you successfully test another model, please open an issue or submit a pull re
 - VISA implementation providing:
   - `visa.h`
   - `visa32.lib`
-- Git, if building from the repository
 
 ### Hardware
 
 - PicoScope supported by FRA4PicoScope
 - Rigol DG822 Pro
-- Appropriate BNC cables and measurement connections
 
 ---
 
@@ -100,7 +97,6 @@ FRA4PicoScope-Rigol-DG822-Pro/
 │   ├── RigolDG822.vcxproj
 │   └── RigolDG822.vcxproj.filters
 │
-├── .gitignore
 └── README.md
 ```
 
@@ -167,10 +163,10 @@ The project can then reference:
 $(VISA_ROOT)\Include
 ```
 
-and, for a 64-bit build:
+and, for a 32-bit build:
 
 ```text
-$(VISA_ROOT)\Lib_x64\msc
+$(VISA_ROOT)\Lib_x32\msc
 ```
 
 ---
@@ -200,7 +196,7 @@ Select:
 
 ```text
 Configuration: Release
-Platform: x64
+Platform: x32
 ```
 
 Then choose:
@@ -228,7 +224,6 @@ RigolDG822.dll
 ```
 
 to the location where your FRA4PicoScope installation loads external signal-generator plugins.
-
 Restart FRA4PicoScope after installing the DLL.
 
 > The exact plugin installation path may depend on your FRA4PicoScope build or installation method.
@@ -249,32 +244,6 @@ Before running FRA4PicoScope:
 6. Select/configure the Rigol external signal generator.
 
 Depending on your VISA configuration, communication may be possible through interfaces such as USB or LAN.
-
----
-
-# VISA and SCPI
-
-Instrument communication is implemented using the VISA API.
-
-The general communication path is:
-
-```text
-FRA4PicoScope
-    ↓
-ExtSigGen API
-    ↓
-RigolDG822 plugin
-    ↓
-VISA
-    ↓
-SCPI commands
-    ↓
-Rigol DG822 Pro
-```
-
-SCPI commands are used to configure generator parameters such as frequency, amplitude, and output state.
-
----
 
 # Development Notes
 
@@ -402,15 +371,11 @@ Useful information in a bug report includes:
 
 # Credits
 
-This project integrates with **FRA4PicoScope** through its external signal-generator interface.
-
-`ExtSigGen.h` originates from the FRA4PicoScope project and should retain any applicable original copyright and licensing information.
-
-Thanks to the FRA4PicoScope project and its contributors for providing the external signal-generator interface that makes this plugin possible.
-
+This project integrates with **FRA4PicoScope** via its external signal generator interface.
+The `ExtSigGen.h` file is part of the FRA4PicoScope project and must retain all original copyright and licensing information.
+We thank the FRA4PicoScope project and its contributors for providing the external signal generator interface that enables the development of this plugin.
 Rigol, PicoScope, and other product names are trademarks of their respective owners.
-
-This project is an independent community project and is not affiliated with or endorsed by Rigol Technologies or Pico Technology.
+This is an independent community project and is not affiliated with or endorsed by Rigol Technologies or Pico Technology.
 
 ---
 
