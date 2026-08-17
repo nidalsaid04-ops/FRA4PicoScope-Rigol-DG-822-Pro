@@ -45,7 +45,7 @@ Current implementation includes support for:
 - Output amplitude control
 - Generator output control
 - Integration with the FRA4PicoScope `ExtSigGen` interface
-- 64-bit Visual Studio build configuration
+- 32-bit Visual Studio build configuration
 
 Additional features and compatibility testing may be added as development continues.
 
