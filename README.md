@@ -387,7 +387,6 @@ A communication failure at this stage normally indicates a VISA, connection, or 
 
 Possible future improvements include:
 
-- [ ] Additional testing with the DG822 Pro
 - [ ] Automatic VISA resource discovery
 - [ ] Improved connection/error reporting
 - [ ] Additional Rigol DG800-series compatibility testing
