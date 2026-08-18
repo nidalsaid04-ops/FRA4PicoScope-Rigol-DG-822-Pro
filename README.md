@@ -1,6 +1,6 @@
 # FRA4PicoScope – Rigol DG822 Pro Plugin
 
-Adding an external signal generator to the **FRA4PicoScope** software, this project supports the **Rigol DG822 Pro** random signal generator/function via VISA.
+Adding an external signal generator to the **FRA4PicoScope** software, this project supports the **Rigol DG822 Pro** arbitrary waveform/function generator via VISA.
 This project aims to enable the FRA4PicoScope software to control the Rigol DG822 Pro as an external signal source during frequency response measurements.
 
 > **Project status:** Development / testing\
