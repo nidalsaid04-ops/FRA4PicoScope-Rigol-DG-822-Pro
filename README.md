@@ -87,6 +87,9 @@ If you successfully test another model, please open an issue or submit a pull re
 ```text
 FRA4PicoScope-Rigol-DG822-Pro/
 │
+│── Examples/
+│   └── visa_idn_test.py
+│
 ├── include/
 │   └── ExtSigGen.h
 │
@@ -244,6 +247,50 @@ Before running FRA4PicoScope:
 6. Select/configure the Rigol external signal generator.
 
 Depending on your VISA configuration, communication may be possible through interfaces such as USB or LAN.
+
+# PyVISA Instrument Detection Test
+
+A small Python script that detects VISA-compatible instruments and sends the standard SCPI `*IDN?` query.
+
+Useful for testing communication with instruments such as Rigol function generators, oscilloscopes, power supplies, and other VISA/SCPI devices.
+
+## Requirements
+
+- Python 3
+- PyVISA
+
+Install PyVISA:
+
+```bash
+pip install pyvisa
+```
+
+## Usage
+
+Connect your instrument by USB, LAN, or another supported VISA interface, then run:
+
+```bash
+python visa_idn_test.py
+```
+
+Example output:
+
+```text
+VISA backend: ...
+Resources found: ('USB0::...::INSTR',)
+
+Trying: USB0::...::INSTR
+SUCCESS
+IDN: RIGOL TECHNOLOGIES,...
+```
+
+The script:
+
+- Lists all detected VISA resources
+- Opens each resource
+- Sends `*IDN?`
+- Prints the instrument identification response
+- Reports communication errors if a device cannot be queried
 
 # Development Notes
 
