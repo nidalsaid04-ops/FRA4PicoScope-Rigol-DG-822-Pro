@@ -8,6 +8,9 @@ This project aims to enable the FRA4PicoScope software to control the Rigol DG82
 
 ---
 
+![FRA4PicoScope-Rigol-DG-822-Pro](Examples/screenshot.png)
+
+
 ## Overview
 
 FRA4PicoScope can perform frequency-response analysis using PicoScope hardware.\
