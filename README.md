@@ -344,10 +344,10 @@ visa.h
 
 Check that the Visual Studio library path points to the correct VISA library directory.
 
-For a typical 64-bit installation:
+For a typical 32-bit installation:
 
 ```text
-$(VISA_ROOT)\Lib_x64\msc
+$(VISA_ROOT)\Lib_x32\msc
 ```
 
 Also verify that:
