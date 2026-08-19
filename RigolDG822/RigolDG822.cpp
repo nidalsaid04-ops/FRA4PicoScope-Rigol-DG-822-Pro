@@ -1,7 +1,7 @@
 #include "RigolDG822.h"
 
 #include <visa.h>
-#pragma comment(lib, "visa32.lib")
+#pragma comment(lib, "C:\\Program Files (x86)\\IVI Foundation\\VISA\\WinNT\\lib\\msc\\visa32.lib")
 
 #include <algorithm>
 #include <cmath>
@@ -596,6 +596,16 @@ bool RigolDG822::SetSignalGenerator(double amplitudeVpp,
 
         m_outputOn = true;
     }
+
+    // Wait until the DG822 Pro has actually executed all
+    // frequency/amplitude/output commands before FRA4PicoScope
+    // starts the PicoScope acquisition.
+    std::string opc;
+    if (!Query("*OPC?", opc))
+        return false;
+
+    if (Trim(opc) != "1")
+        return false;
 
     return true;
 }
