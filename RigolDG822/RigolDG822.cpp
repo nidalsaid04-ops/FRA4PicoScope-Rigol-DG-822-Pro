@@ -1,12 +1,16 @@
 #include "RigolDG822.h"
 
 #include <visa.h>
+
 #pragma comment(lib, "C:\\Program Files (x86)\\IVI Foundation\\VISA\\WinNT\\lib\\msc\\visa32.lib")
+
 
 #include <algorithm>
 #include <cmath>
 #include <cwctype>
 #include <iomanip>
+#include <locale>
+#include <limits>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -33,15 +37,15 @@ namespace
     std::string Trim(std::string s)
     {
         while (!s.empty() &&
-               (s.back() == '\r' || s.back() == '\n' ||
-                s.back() == ' '  || s.back() == '\t'))
+            (s.back() == '\r' || s.back() == '\n' ||
+                s.back() == ' ' || s.back() == '\t'))
         {
             s.pop_back();
         }
 
         size_t first = 0;
         while (first < s.size() &&
-               (s[first] == ' ' || s[first] == '\t' ||
+            (s[first] == ' ' || s[first] == '\t' ||
                 s[first] == '\r' || s[first] == '\n'))
         {
             ++first;
@@ -119,46 +123,79 @@ namespace
             &written);
 
         return VisaSucceeded(st) &&
-               written == static_cast<ViUInt32>(line.size());
+            written == static_cast<ViUInt32>(line.size());
     }
 
     bool RawQuery(ViSession session,
-                  const std::string& command,
-                  std::string& response)
+        const std::string& command,
+        std::string& response)
     {
         response.clear();
 
         if (!RawWrite(session, command))
             return false;
 
-        unsigned char buffer[1024] = {};
-        ViUInt32 readCount = 0;
-
-        ViStatus st = viRead(
-            session,
-            buffer,
-            static_cast<ViUInt32>(sizeof(buffer) - 1),
-            &readCount);
-
-        if (!VisaSucceeded(st))
-            return false;
-
-        buffer[readCount] = '\0';
-        response.assign(reinterpret_cast<char*>(buffer), readCount);
+        // VI_SUCCESS_MAX_CNT means that more of the response may remain.
+        // Never let a response tail become the reply to the next query.
+        constexpr size_t maxResponseBytes = 64 * 1024;
+        for (;;)
+        {
+            unsigned char buffer[1024] = {};
+            ViUInt32 readCount = 0;
+            const ViStatus st = viRead(session, buffer, sizeof(buffer), &readCount);
+            if (!VisaSucceeded(st) || readCount > sizeof(buffer) ||
+                response.size() + readCount > maxResponseBytes)
+            {
+                response.clear();
+                return false; // Caller must discard the session after query failure.
+            }
+            response.append(reinterpret_cast<const char*>(buffer), readCount);
+            if (st != VI_SUCCESS_MAX_CNT ||
+                (!response.empty() && response.back() == '\n'))
+                break;
+            if (readCount == 0)
+                return false;
+        }
         response = Trim(response);
-        return true;
+        return !response.empty();
+    }
+
+    bool ConfigureVisa(ViSession session, ViUInt32 timeout)
+    {
+        return VisaSucceeded(viSetAttribute(session, VI_ATTR_TMO_VALUE, timeout)) &&
+            VisaSucceeded(viSetAttribute(session, VI_ATTR_TERMCHAR, '\n')) &&
+            VisaSucceeded(viSetAttribute(session, VI_ATTR_TERMCHAR_EN, VI_TRUE));
+    }
+
+    bool CommandsCompleted(ViSession session)
+    {
+        std::string reply;
+        if (!RawQuery(session, "*OPC?", reply) ||
+            (reply != "1" && reply != "+1"))
+            return false;
+        if (!RawQuery(session, ":SYST:ERR?", reply))
+            return false;
+        const size_t comma = reply.find(',');
+        if (comma == std::string::npos)
+            return false;
+        const std::string code = Trim(reply.substr(0, comma));
+        return code == "0" || code == "+0";
     }
 
     bool LooksLikeDG822(const std::string& idn)
     {
-        std::string u = UpperAscii(idn);
-        return u.find("RIGOL") != std::string::npos &&
-               u.find("DG822") != std::string::npos;
+        std::istringstream fields(UpperAscii(idn));
+        std::string maker, model;
+        if (!std::getline(fields, maker, ',') || !std::getline(fields, model, ','))
+            return false;
+        model = Trim(model);
+        return Trim(maker).find("RIGOL") != std::string::npos &&
+            (model == "DG822" || model == "DG822 PRO" || model == "DG822PRO");
     }
 
     bool QueryResourceIdn(ViSession rm,
-                          const std::string& resource,
-                          std::string& idn)
+        const std::string& resource,
+        std::string& idn)
     {
         idn.clear();
 
@@ -173,11 +210,7 @@ namespace
         if (!VisaSucceeded(st))
             return false;
 
-        viSetAttribute(session, VI_ATTR_TMO_VALUE, 2000);
-        viSetAttribute(session, VI_ATTR_TERMCHAR, '\n');
-        viSetAttribute(session, VI_ATTR_TERMCHAR_EN, VI_TRUE);
-
-        bool ok = RawQuery(session, "*IDN?", idn);
+        bool ok = ConfigureVisa(session, 2000) && RawQuery(session, "*IDN?", idn);
 
         viClose(session);
         return ok;
@@ -240,13 +273,13 @@ namespace
 
 RigolDG822::RigolDG822(const wchar_t* resourceId)
     : m_resourceId(resourceId ? resourceId : L""),
-      m_defaultRM(VI_NULL),
-      m_session(VI_NULL),
-      m_channel(1),
-      m_highZ(true),
-      m_timeoutMs(2000),
-      m_ready(false),
-      m_outputOn(false)
+    m_defaultRM(VI_NULL),
+    m_session(VI_NULL),
+    m_channel(1),
+    m_highZ(true),
+    m_timeoutMs(2000),
+    m_ready(false),
+    m_outputOn(false)
 {
 }
 
@@ -308,7 +341,7 @@ bool RigolDG822::ParseInitString(const wchar_t* initString)
                 m_highZ = true;
             }
             else if (value == L"50" || value == L"50OHM" ||
-                     value == L"50OHMS")
+                value == L"50OHMS")
             {
                 m_highZ = false;
             }
@@ -321,6 +354,8 @@ bool RigolDG822::ParseInitString(const wchar_t* initString)
         {
             try
             {
+                if (value.empty() || value.find_first_not_of(L"0123456789") != std::wstring::npos)
+                    return false;
                 unsigned long v = std::stoul(value);
                 if (v < 100 || v > 60000)
                     return false;
@@ -343,13 +378,14 @@ bool RigolDG822::ParseInitString(const wchar_t* initString)
 
 bool RigolDG822::OpenVisa()
 {
-    if (!VisaSucceeded(viOpenDefaultRM(
-            reinterpret_cast<ViPSession>(&m_defaultRM))))
+    ViSession rm = VI_NULL;
+    if (!VisaSucceeded(viOpenDefaultRM(&rm)))
     {
         m_defaultRM = VI_NULL;
         return false;
     }
 
+    m_defaultRM = rm;
     std::string resource = NarrowAscii(m_resourceId);
     if (resource.empty())
         return false;
@@ -368,19 +404,7 @@ bool RigolDG822::OpenVisa()
 
     m_session = static_cast<unsigned long>(session);
 
-    viSetAttribute(static_cast<ViSession>(m_session),
-                   VI_ATTR_TMO_VALUE,
-                   m_timeoutMs);
-
-    viSetAttribute(static_cast<ViSession>(m_session),
-                   VI_ATTR_TERMCHAR,
-                   '\n');
-
-    viSetAttribute(static_cast<ViSession>(m_session),
-                   VI_ATTR_TERMCHAR_EN,
-                   VI_TRUE);
-
-    return true;
+    return ConfigureVisa(session, m_timeoutMs);
 }
 
 void RigolDG822::CloseVisa()
@@ -404,7 +428,7 @@ bool RigolDG822::Write(const std::string& command)
 }
 
 bool RigolDG822::Query(const std::string& command,
-                       std::string& response)
+    std::string& response)
 {
     return RawQuery(static_cast<ViSession>(m_session), command, response);
 }
@@ -484,6 +508,11 @@ bool RigolDG822::Initialize(const wchar_t* initString)
         }
     }
 
+    if (!CommandsCompleted(static_cast<ViSession>(m_session)))
+    {
+        Terminate();
+        return false;
+    }
     m_outputOn = false;
     m_ready = true;
     return true;
@@ -495,7 +524,7 @@ bool RigolDG822::Terminate(void)
 
     if (m_session != VI_NULL)
     {
-        // Always leave the generator output in a safe OFF state.
+        // Best-effort output OFF; communication failure cannot guarantee output state.
         {
             std::ostringstream cmd;
             cmd << ":OUTP" << m_channel << ":STAT OFF";
@@ -540,8 +569,8 @@ double RigolDG822::MinAmplitudeVpp() const
 }
 
 bool RigolDG822::SetSignalGenerator(double amplitudeVpp,
-                                    double offsetV,
-                                    double frequencyHz)
+    double offsetV,
+    double frequencyHz)
 {
     if (!Ready())
         return false;
@@ -576,36 +605,36 @@ bool RigolDG822::SetSignalGenerator(double amplitudeVpp,
     // One SCPI command updates waveform type, frequency, amplitude,
     // offset, and phase together.
     std::ostringstream apply;
-    apply << std::setprecision(15)
-          << ":SOUR" << m_channel
-          << ":APPL:SIN "
-          << frequencyHz << ","
-          << amplitudeVpp << ","
-          << offsetV << ",0";
+    apply.imbue(std::locale::classic()); // SCPI always requires a decimal point.
+    apply << std::setprecision(std::numeric_limits<double>::max_digits10)
+        << ":SOUR" << m_channel
+        << ":APPL:SIN "
+        << frequencyHz << ","
+        << amplitudeVpp << ","
+        << offsetV << ",0";
 
-    if (!Write(apply.str()))
-        return false;
-
-    if (!m_outputOn)
-    {
-        std::ostringstream out;
-        out << ":OUTP" << m_channel << ":STAT ON";
-
-        if (!Write(out.str()))
+    // A failed transaction can leave the output or query stream uncertain.
+    // Attempt output OFF, then close; Initialize() is required before reuse.
+    const auto fail = [this]() -> bool
+        {
+            Terminate();
             return false;
+        };
 
-        m_outputOn = true;
-    }
+    if (!Write(apply.str()) ||
+        !CommandsCompleted(static_cast<ViSession>(m_session)))
+        return fail();
 
-    // Wait until the DG822 Pro has actually executed all
-    // frequency/amplitude/output commands before FRA4PicoScope
-    // starts the PicoScope acquisition.
-    std::string opc;
-    if (!Query("*OPC?", opc))
-        return false;
+    // Reassert ON: a cached flag cannot detect front-panel changes.
+    std::ostringstream out;
+    out << ":OUTP" << m_channel << ":STAT ON";
+    if (!Write(out.str()) ||
+        !CommandsCompleted(static_cast<ViSession>(m_session)))
+        return fail();
 
-    if (Trim(opc) != "1")
-        return false;
+    m_outputOn = true;
+    // Command completion does not guarantee DUT/analog settling.
+    // FRA4PicoScope must still provide its measurement settling delay.
 
     return true;
 }
@@ -618,15 +647,19 @@ bool RigolDG822::DisableSignalGenerator(void)
     std::ostringstream cmd;
     cmd << ":OUTP" << m_channel << ":STAT OFF";
 
-    if (!Write(cmd.str()))
+    if (!Write(cmd.str()) ||
+        !CommandsCompleted(static_cast<ViSession>(m_session)))
+    {
+        Terminate();
         return false;
+    }
 
     m_outputOn = false;
     return true;
 }
 
 bool RigolDG822::GetNearestFrequency(double frequency,
-                                     double* nearestFrequency)
+    double* nearestFrequency)
 {
     if (!nearestFrequency || !std::isfinite(frequency))
         return false;
@@ -637,9 +670,8 @@ bool RigolDG822::GetNearestFrequency(double frequency,
         return false;
     }
 
-    // DG822 Pro sine-frequency resolution is 1 uHz or 12 digits.
-    // Across this model's 25 MHz sine range, 1 uHz rounding is safe
-    // for FRA frequency-point generation.
+    // Preserve the original 1 uHz grid. Confirm effective high-frequency
+    // resolution against the exact model/firmware before using DDS correction.
     *nearestFrequency = std::round(frequency * 1.0e6) / 1.0e6;
     return true;
 }
@@ -663,8 +695,8 @@ bool RigolDG822::GetMinFrequency(double* minFrequency)
 }
 
 bool RigolDG822::GetMaxAmplitudeVpp(double* maxAmplitudeVpp,
-                                    double minFrequency,
-                                    double maxFrequency)
+    double minFrequency,
+    double maxFrequency)
 {
     if (!maxAmplitudeVpp)
         return false;
@@ -683,8 +715,8 @@ bool RigolDG822::GetMaxAmplitudeVpp(double* maxAmplitudeVpp,
 }
 
 bool RigolDG822::GetMinAmplitudeVpp(double* minAmplitudeVpp,
-                                    double minFrequency,
-                                    double maxFrequency)
+    double minFrequency,
+    double maxFrequency)
 {
     if (!minAmplitudeVpp)
         return false;
@@ -703,7 +735,7 @@ bool RigolDG822::GetMinAmplitudeVpp(double* minAmplitudeVpp,
 }
 
 bool RigolDG822::IsDDS(double* dacFrequency,
-                       uint8_t* phaseAccumulatorSize)
+    uint8_t* phaseAccumulatorSize)
 {
     // DG800 Pro uses RIGOL SiFi II rather than a conventional DDS model.
     // Returning false tells FRA4PicoScope not to quantize frequencies using
@@ -744,8 +776,8 @@ void CloseExtSigGen(ExtSigGen* pESG)
 }
 
 bool EnumerateExtSigGen(uint16_t* count,
-                        wchar_t* ids,
-                        uint16_t* idLth)
+    wchar_t* ids,
+    uint16_t* idLth)
 {
     if (!count || !idLth)
         return false;
