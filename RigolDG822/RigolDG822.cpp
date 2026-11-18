@@ -1,7 +1,6 @@
 #include "RigolDG822.h"
 
 #include <visa.h>
-
 #pragma comment(lib, "C:\\Program Files (x86)\\IVI Foundation\\VISA\\WinNT\\lib\\msc\\visa32.lib")
 
 
@@ -444,7 +443,7 @@ bool RigolDG822::Initialize(const wchar_t* initString)
 
     m_channel = 1;
     m_highZ = true;
-    m_timeoutMs = 2000;
+    m_timeoutMs = 10000;
 
     if (!ParseInitString(initString))
         return false;

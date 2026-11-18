@@ -5,7 +5,7 @@
 
 // ExtSigGen.h is the interface supplied by FRA4PicoScope.
 // The Visual Studio project adds ..\FRA4PicoScope to the include path.
-#include "ExtSigGen.h"
+#include "../include/ExtSigGen.h"
 
 class RigolDG822 : public ExtSigGen
 {
