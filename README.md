@@ -2,7 +2,7 @@
 
 Use your **Rigol DG822 Pro** as an external signal generator in **FRA4PicoScope**. This plugin lets FRA4PicoScope set the generator's frequency, amplitude, and DC offset automatically during a Bode plot measurement.
 
-**[Download RigolDG822.dll — v0.1.0](https://github.com/nidalsaid04-ops/FRA4PicoScope-Rigol-DG-822-Pro/releases/download/v0.1.0/RigolDG822.dll)** · [All releases](https://github.com/nidalsaid04-ops/FRA4PicoScope-Rigol-DG-822-Pro/releases) · [Report a problem](https://github.com/nidalsaid04-ops/FRA4PicoScope-Rigol-DG-822-Pro/issues)
+**[Download RigolDG822.dll — v0.1.1](https://github.com/nidalsaid04-ops/FRA4PicoScope-Rigol-DG-822-Pro/releases/download/v0.1.1/RigolDG822.dll)** · [All releases](https://github.com/nidalsaid04-ops/FRA4PicoScope-Rigol-DG-822-Pro/releases) · [Report a problem](https://github.com/nidalsaid04-ops/FRA4PicoScope-Rigol-DG-822-Pro/issues)
 
 > **First working release:** tested over USB with a Rigol DG822 Pro and a PicoScope 2406B. The downloadable DLL is a **Windows 32-bit (Win32)** build. Testing with other setups is welcome.
 
