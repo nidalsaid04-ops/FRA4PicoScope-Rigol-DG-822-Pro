@@ -1,0 +1,11 @@
+# Visual Studio build output and local state
+build/
+bin/
+x64/
+Win32/
+Debug/
+Release/
+.vs/
+*.user
+*.aps
+CppProperties.json

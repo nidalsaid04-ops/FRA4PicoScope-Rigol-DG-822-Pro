@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Drivers">
+      <UniqueIdentifier>{94F4F51D-EE26-4E61-9CCF-3BA9A7C627A6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Detection">
+      <UniqueIdentifier>{BBA3394C-43FD-416A-971A-B39F40496DD8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Plugin">
+      <UniqueIdentifier>{5C2E8B1A-7D3F-4E6A-9B0C-1F2D3E4A5B6C}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Drivers\RigolDG822.h">
+      <Filter>Drivers</Filter>
+    </ClInclude>
+    <ClInclude Include="Plugin\ExtSigGen.h">
+      <Filter>Plugin</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Drivers\RigolDG822.cpp">
+      <Filter>Drivers</Filter>
+    </ClCompile>
+    <ClCompile Include="Detection\InstrumentDiscovery.cpp">
+      <Filter>Detection</Filter>
+    </ClCompile>
+    <ClCompile Include="Plugin\ExtSigGen.cpp">
+      <Filter>Plugin</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="RigolSignalGenerator.def">
+      <Filter>Plugin</Filter>
+    </None>
+  </ItemGroup>
+</Project>

@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{1BB3C06B-5D49-4F3A-B9F8-4F0AF29D8220}</ProjectGuid>
+    <RootNamespace>RigolSignalGenerator</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+
+  <!-- Same settings for every configuration. The default toolset of the installed
+       Visual Studio is used (v143 for VS 2022, v145 for VS 2026). -->
+  <PropertyGroup Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'" Label="Configuration">
+    <UseDebugLibraries>true</UseDebugLibraries>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)'=='Release'" Label="Configuration">
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+
+  <!-- VISA development files. Override on the command line if installed elsewhere:
+       msbuild RigolSignalGenerator.vcxproj /p:VisaRoot="D:\IVI Foundation\VISA\WinNT" -->
+  <PropertyGroup Label="UserMacros">
+    <VisaRoot Condition="'$(VisaRoot)'==''">C:\Program Files (x86)\IVI Foundation\VISA\WinNT</VisaRoot>
+    <VisaLibDir Condition="'$(Platform)'=='Win32'">$(VisaRoot)\lib\msc;$(VisaRoot)\Lib_x86\msc;$(VisaRoot)\Lib_x32\msc</VisaLibDir>
+    <VisaLibDir Condition="'$(Platform)'=='x64'">$(VisaRoot)\Lib_x64\msc</VisaLibDir>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- Keep the published DLL name so existing installations keep working. -->
+    <TargetName>RigolDG822</TargetName>
+    <!-- Finished DLLs: <repo>\bin\Win32\Release\RigolDG822.dll and <repo>\bin\x64\Release\RigolDG822.dll -->
+    <OutDir>$([System.IO.Path]::GetFullPath('$(ProjectDir)..\bin\$(Platform)\$(Configuration)\'))</OutDir>
+    <!-- Everything goes under <repo>\bin: intermediate files in an obj sub-folder. -->
+    <IntDir>$(OutDir)obj\</IntDir>
+  </PropertyGroup>
+
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <ConformanceMode>true</ConformanceMode>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <PreprocessorDefinitions>_WINDOWS;_USRDLL;EXTSIGGENAPI_EXPORTS;NOMINMAX;WIN32_LEAN_AND_MEAN;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <!-- Only the VISA headers: never add a source sub-folder here. -->
+      <AdditionalIncludeDirectories>$(VisaRoot)\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <!-- visa32.lib / visa64.lib is selected in RigolDG822.cpp by #pragma comment. -->
+      <AdditionalLibraryDirectories>$(VisaLibDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <ModuleDefinitionFile>RigolSignalGenerator.def</ModuleDefinitionFile>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
+    <ClCompile>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <!-- Static CRT: the plugin DLL does not depend on a VC++ redistributable. -->
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
+    <ClCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <ItemGroup>
+    <ClInclude Include="Plugin\ExtSigGen.h" />
+    <ClInclude Include="Drivers\RigolDG822.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Drivers\RigolDG822.cpp" />
+    <ClCompile Include="Detection\InstrumentDiscovery.cpp" />
+    <ClCompile Include="Plugin\ExtSigGen.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="RigolSignalGenerator.def" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+
+  <!-- Print where the finished DLL is, at the end of every build (Output window). -->
+  <Target Name="ReportDllLocation" AfterTargets="Build">
+    <Message Importance="high" Text=" " />
+    <Message Importance="high" Text="=====================================================================" />
+    <Message Importance="high" Text=" DLL READY ($(Platform) $(Configuration)): $([System.IO.Path]::GetFullPath('$(TargetPath)'))" />
+    <Message Importance="high" Text="=====================================================================" />
+  </Target>
+</Project>
